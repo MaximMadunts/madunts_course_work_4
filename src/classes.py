@@ -5,8 +5,10 @@ import time
 from abc import ABC, abstractmethod
 from configparser import ParsingError
 
+import pandas as pd
 import requests
 from pydash import get
+from tabulate import tabulate
 
 
 class ArcConnector(ABC):
@@ -100,26 +102,26 @@ class Vacancy:
         self.currency = currency
         self.country = country
 
-    def __str__(self):
+    def __repr__(self):
+        return f"{self.employer}, {self.title}, " \
+               f"{self.url}, {self.salary_from}, " \
+               f"{self.salary_to}, {self.currency}, " \
+               f"{self.country}"
 
-        return f"Работодатель: {self.employer}\n" \
-               f"Вакансия: {self.title}\n" \
-               f"Зарплата: от {self.salary_from} до {self.salary_to}\n" \
-               f"Ссылка: {self.url}\n" \
-               f"Город: {self.country}\n" \
-               f"Валюта: {self.currency}\n"
-
-    def __ge__(self, other):
-        if self.salary_from is not None and other.salary_to is not None:
-            return self.salary_from >= other.salary_to
+    def __lt__(self, other):
+        if self.salary_from is not None and other.salary_from is not None:
+            return self.salary_from < other.salary_from
+        elif self.salary_from is not None and other.salary_from is None:
+            return False  # Поместить объекты с None в конец
         else:
-            print("ЗП не указана")
+            return self.salary_from is None and other.salary_from is None
 
-    def __le__(self, other):
-        if self.salary_from is not None and other.salary_to is not None:
-            return self.salary_from <= other.salary_to
-        else:
-            print("ЗП не указана")
+    def __eq__(self, other):
+        if isinstance(other, Vacancy):
+            return self.salary_from == other.salary_from
+        return False
+
+        # return self.salary_from == other.salary_from
 
 
 class Connector(ArcConnector):
@@ -140,7 +142,14 @@ class Connector(ArcConnector):
         return selected_vacs
 
     def sorted_by_salary(self):
-        return [print(Vacancy(**x)) for x in self.select()]
+        vacancies_list = [Vacancy(**x) for x in self.select() if x.get("salary_from") is not None]
+
+        def vacancy_sort_key(vacancy):
+            return vacancy.salary_from
+
+        sorted_vacancies = sorted(vacancies_list, key=vacancy_sort_key)
+
+        return sorted_vacancies
 
     def delete(self):
         os.remove(self.filename)

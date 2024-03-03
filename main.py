@@ -38,9 +38,14 @@ def main():
                                        'Город'])
             print(df)
         elif command == '2':
-            connector.sorted_by_salary()
+            sorted_vacancies = connector.sorted_by_salary()
+            df = pd.DataFrame(sorted_vacancies)
+            df = tabulate(df, headers=['Компания', 'Должность', 'Ссылка на вакансию', 'ЗП от', 'ЗП до', 'Валюта',
+                                       'Город'])
 
+            print(df)
 
+            # connector.sorted_by_salary()
 
 
 if __name__ == "__main__":
